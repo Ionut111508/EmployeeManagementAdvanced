@@ -37,7 +37,10 @@ public class EmployeeDepartmentsController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.EmployeeId) || string.IsNullOrWhiteSpace(request.DepartmentId))
             return BadRequest("EmployeeId and DepartmentId are required.");
 
-        if (request.EndDate.HasValue && request.StartDate.HasValue && request.EndDate.Value < request.StartDate.Value)
+        if (request.StartDate == default)
+            return BadRequest("StartDate is required.");
+
+        if (request.EndDate.HasValue && request.EndDate.Value < request.StartDate)
             return BadRequest("EndDate cannot be before StartDate.");
 
         if (!await _context.Employees.AnyAsync(x => x.EmployeeId == request.EmployeeId))
@@ -54,7 +57,7 @@ public class EmployeeDepartmentsController : ControllerBase
         {
             EmployeeId = request.EmployeeId,
             DepartmentId = request.DepartmentId,
-            StartDate = request.StartDate ?? DateTime.Today,
+            StartDate = request.StartDate,
             EndDate = request.EndDate
         };
 
