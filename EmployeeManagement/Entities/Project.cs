@@ -4,8 +4,6 @@ namespace EmployeeManagement.Entities
     {
         public string ProjectId { get; set; } = null!;
         public string ProjectName { get; set; } = null!;
-        public string? Description { get; set; }
-        public DateTime CreatedDate { get; set; }
 
         // Navigation properties
         public ICollection<TaskItem> TaskItems { get; set; } = new List<TaskItem>();

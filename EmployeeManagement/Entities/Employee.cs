@@ -3,12 +3,12 @@ namespace EmployeeManagement.Entities
     public class Employee
     {
         public string EmployeeId { get; set; } = null!;
-        public string EmployeeName { get; set; } = null!;
+        public string LastName { get; set; } = null!;
+        public string FirstName { get; set; } = null!;
+        public string? Email { get; set; }
+        public string? PhoneNumber { get; set; }
         public string? AccountId { get; set; }
         public string? WorkNormId { get; set; }
-        public string? Email { get; set; }
-        public string? Phone { get; set; }
-        public DateTime HireDate { get; set; }
 
         // Navigation properties
         public Account? Account { get; set; }
@@ -19,5 +19,6 @@ namespace EmployeeManagement.Entities
         public ICollection<Allocation> Allocations { get; set; } = new List<Allocation>();
         public ICollection<Timesheet> Timesheets { get; set; } = new List<Timesheet>();
         public ICollection<TaskComment> TaskComments { get; set; } = new List<TaskComment>();
+        public ICollection<Period> Periods { get; set; } = new List<Period>();
     }
 }

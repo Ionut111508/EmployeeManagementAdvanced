@@ -5,17 +5,14 @@ namespace EmployeeManagement.Data
 {
     public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options)
-            : base(options)
-        {
-        }
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<Project> Projects { get; set; }
         public DbSet<WorkNorm> WorkNorms { get; set; }
         public DbSet<Skill> Skills { get; set; }
         public DbSet<Department> Departments { get; set; }
         public DbSet<Account> Accounts { get; set; }
-        public DbSet<TaskDescription> TaskDescriptions { get; set; }
+        public DbSet<TaskDescription> Descriptions { get; set; }
         public DbSet<Employee> Employees { get; set; }
         public DbSet<TaskItem> TaskItems { get; set; }
         public DbSet<TaskComment> TaskComments { get; set; }
@@ -32,222 +29,167 @@ namespace EmployeeManagement.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configure Project table
-            modelBuilder.Entity<Project>()
-                .ToTable("Project")
-                .HasKey(p => p.ProjectId);
+            modelBuilder.Entity<Project>(entity =>
+            {
+                entity.ToTable("Project");
+                entity.HasKey(x => x.ProjectId);
+                entity.Property(x => x.ProjectId).HasMaxLength(50);
+                entity.Property(x => x.ProjectName).HasMaxLength(100).IsRequired();
+            });
 
-            // Configure WorkNorm table
-            modelBuilder.Entity<WorkNorm>()
-                .ToTable("WorkNorm")
-                .HasKey(w => w.WorkNormId);
+            modelBuilder.Entity<WorkNorm>(entity =>
+            {
+                entity.ToTable("WorkNorm");
+                entity.HasKey(x => x.WorkNormId);
+                entity.Property(x => x.WorkNormId).HasMaxLength(50);
+                entity.Property(x => x.WorkNormName).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.WorkHours).HasColumnName("HoursPerDay").HasColumnType("decimal(3,1)");
+            });
 
-            // Configure Skill table
-            modelBuilder.Entity<Skill>()
-                .ToTable("Skill")
-                .HasKey(s => s.SkillId);
+            modelBuilder.Entity<Skill>(entity =>
+            {
+                entity.ToTable("Skill");
+                entity.HasKey(x => x.SkillId);
+                entity.Property(x => x.SkillId).HasMaxLength(50);
+                entity.Property(x => x.SkillName).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.SkillLevel).HasMaxLength(50);
+            });
 
-            // Configure Department table
-            modelBuilder.Entity<Department>()
-                .ToTable("Department")
-                .HasKey(d => d.DepartmentId);
+            modelBuilder.Entity<Department>(entity =>
+            {
+                entity.ToTable("Department");
+                entity.HasKey(x => x.DepartmentId);
+                entity.Property(x => x.DepartmentId).HasMaxLength(50);
+                entity.Property(x => x.DepartmentName).HasMaxLength(100).IsRequired();
+            });
 
-            // Configure Account table
-            modelBuilder.Entity<Account>()
-                .ToTable("Account")
-                .HasKey(a => a.AccountId);
+            modelBuilder.Entity<Account>(entity =>
+            {
+                entity.ToTable("Account");
+                entity.HasKey(x => x.AccountId);
+                entity.Property(x => x.AccountId).HasMaxLength(50);
+                entity.Property(x => x.Username).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.Password).HasColumnName("PasswordHash").HasMaxLength(255).IsRequired();
+            });
 
-            // Configure TaskDescription table
-            modelBuilder.Entity<TaskDescription>()
-                .ToTable("TaskDescription")
-                .HasKey(td => td.TaskDescriptionId);
+            modelBuilder.Entity<TaskDescription>(entity =>
+            {
+                entity.ToTable("TaskDescription");
+                entity.HasKey(x => x.DescriptionId);
+                entity.Property(x => x.DescriptionId).HasColumnName("TaskDescriptionId").HasMaxLength(50);
+                entity.Property(x => x.TaskDescriptionText).HasColumnName("DescriptionText").HasMaxLength(500);
+            });
 
-            // Configure Employee table
-            modelBuilder.Entity<Employee>()
-                .ToTable("Employee")
-                .HasKey(e => e.EmployeeId);
+            modelBuilder.Entity<Employee>(entity =>
+            {
+                entity.ToTable("Employee");
+                entity.HasKey(x => x.EmployeeId);
+                entity.HasIndex(x => x.AccountId).IsUnique();
+                entity.Property(x => x.EmployeeId).HasMaxLength(50);
+                entity.Property(x => x.LastName).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.FirstName).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.Email).HasMaxLength(100).IsRequired();
+                entity.Property(x => x.PhoneNumber).HasMaxLength(50).IsRequired();
+                entity.HasOne(x => x.Account).WithMany().HasForeignKey(x => x.AccountId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(x => x.WorkNorm).WithMany().HasForeignKey(x => x.WorkNormId).OnDelete(DeleteBehavior.Restrict);
+            });
 
-            modelBuilder.Entity<Employee>()
-                .HasOne(e => e.Account)
-                .WithMany()
-                .HasForeignKey(e => e.AccountId)
-                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<TaskItem>(entity =>
+            {
+                entity.ToTable("TaskItem");
+                entity.HasKey(x => new { x.ProjectId, x.TaskId });
+                entity.HasIndex(x => x.DescriptionId).IsUnique();
+                entity.Property(x => x.ProjectId).HasMaxLength(50);
+                entity.Property(x => x.TaskId).HasMaxLength(50);
+                entity.Property(x => x.TaskName).HasMaxLength(100).IsRequired();
+                entity.Property(x => x.EstimatedHours).HasColumnType("decimal(10,2)");
+                entity.Property(x => x.DescriptionId).HasColumnName("TaskDescriptionId").HasMaxLength(50).IsRequired();
+                entity.HasOne(x => x.Project).WithMany(x => x.TaskItems).HasForeignKey(x => x.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(x => x.Description).WithMany().HasForeignKey(x => x.DescriptionId).OnDelete(DeleteBehavior.Restrict);
+            });
 
-            modelBuilder.Entity<Employee>()
-                .HasOne(e => e.WorkNorm)
-                .WithMany()
-                .HasForeignKey(e => e.WorkNormId)
-                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<TaskComment>(entity =>
+            {
+                entity.ToTable("TaskComment");
+                entity.HasKey(x => x.TaskCommentId);
+                entity.Property(x => x.TaskCommentId).HasMaxLength(50);
+                entity.Property(x => x.CommentText).HasMaxLength(500).IsRequired();
+                entity.HasOne(x => x.TaskItem).WithMany(x => x.TaskComments).HasForeignKey(x => new { x.ProjectId, x.TaskId }).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(x => x.Employee).WithMany(x => x.TaskComments).HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Restrict);
+            });
 
-            // Configure TaskItem table with composite key
-            modelBuilder.Entity<TaskItem>()
-                .ToTable("TaskItem")
-                .HasKey(t => new { t.ProjectId, t.TaskId });
+            modelBuilder.Entity<Period>(entity =>
+            {
+                entity.ToTable("Period");
+                entity.HasKey(x => x.PeriodId);
+                entity.Property(x => x.PeriodId).HasMaxLength(50);
+                entity.Property(x => x.Year).HasMaxLength(10);
+                entity.Property(x => x.Month).HasMaxLength(10);
+                entity.Property(x => x.Day).HasMaxLength(10);
+                entity.Property(x => x.PeriodType).HasMaxLength(50).IsRequired();
+                entity.HasOne(x => x.Employee).WithMany(x => x.Periods).HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+            });
 
-            modelBuilder.Entity<TaskItem>()
-                .HasOne(t => t.Project)
-                .WithMany(p => p.TaskItems)
-                .HasForeignKey(t => t.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Timesheet>(entity =>
+            {
+                entity.ToTable("Timesheet");
+                entity.HasKey(x => new { x.ProjectId, x.TaskId, x.EmployeeId, x.WorkDate });
+                entity.Property(x => x.WorkDate).HasColumnName("EntryDate");
+                entity.Property(x => x.WorkedHours).HasColumnName("HoursWorked").HasColumnType("decimal(4,2)");
+                entity.HasOne(x => x.TaskItem).WithMany(x => x.Timesheets).HasForeignKey(x => new { x.ProjectId, x.TaskId }).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(x => x.Employee).WithMany(x => x.Timesheets).HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+            });
 
-            // Configure TaskComment table
-            modelBuilder.Entity<TaskComment>()
-                .ToTable("TaskComment")
-                .HasKey(tc => tc.TaskCommentId);
+            modelBuilder.Entity<EmployeeSkill>(entity =>
+            {
+                entity.ToTable("EmployeeSkill");
+                entity.HasKey(x => new { x.EmployeeId, x.SkillId });
+                entity.HasOne(x => x.Employee).WithMany(x => x.EmployeeSkills).HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(x => x.Skill).WithMany(x => x.EmployeeSkills).HasForeignKey(x => x.SkillId).OnDelete(DeleteBehavior.Cascade);
+            });
 
-            modelBuilder.Entity<TaskComment>()
-                .HasOne(tc => tc.TaskItem)
-                .WithMany(t => t.TaskComments)
-                .HasForeignKey(tc => new { tc.ProjectId, tc.TaskId })
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Allocation>(entity =>
+            {
+                entity.ToTable("Allocation");
+                entity.HasKey(x => new { x.EmployeeId, x.ProjectId, x.TaskId });
+                entity.Property(x => x.AllocationStartDate).HasColumnName("StartDate");
+                entity.Property(x => x.AllocationEndDate).HasColumnName("EndDate");
+                entity.Property(x => x.AllocatedHours).HasColumnName("HoursPerDay").HasColumnType("decimal(2,1)");
+                entity.HasOne(x => x.Employee).WithMany(x => x.Allocations).HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(x => x.TaskItem).WithMany(x => x.Allocations).HasForeignKey(x => new { x.ProjectId, x.TaskId }).OnDelete(DeleteBehavior.Cascade);
+            });
 
-            modelBuilder.Entity<TaskComment>()
-                .HasOne(tc => tc.Employee)
-                .WithMany(e => e.TaskComments)
-                .HasForeignKey(tc => tc.EmployeeId)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<EmployeeDepartment>(entity =>
+            {
+                entity.ToTable("EmployeeDepartment");
+                entity.HasKey(x => new { x.EmployeeId, x.DepartmentId });
+                entity.HasOne(x => x.Employee).WithMany(x => x.EmployeeDepartments).HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(x => x.Department).WithMany(x => x.EmployeeDepartments).HasForeignKey(x => x.DepartmentId).OnDelete(DeleteBehavior.Cascade);
+            });
 
-            // Configure Period table
-            modelBuilder.Entity<Period>()
-                .ToTable("Period")
-                .HasKey(p => p.PeriodId);
+            modelBuilder.Entity<ProjectManager>(entity =>
+            {
+                entity.ToTable("ProjectManager");
+                entity.HasKey(x => new { x.EmployeeId, x.ProjectId });
+                entity.HasOne(x => x.Employee).WithMany(x => x.ProjectManagers).HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(x => x.Project).WithMany(x => x.ProjectManagers).HasForeignKey(x => x.ProjectId).OnDelete(DeleteBehavior.Cascade);
+            });
 
-            // Configure Timesheet table with composite key
-            modelBuilder.Entity<Timesheet>()
-                .ToTable("Timesheet")
-                .HasKey(t => new { t.ProjectId, t.TaskId, t.EmployeeId, t.EntryDate });
+            modelBuilder.Entity<TaskPeriod>(entity =>
+            {
+                entity.ToTable("TaskPeriod");
+                entity.HasKey(x => new { x.ProjectId, x.TaskId, x.PeriodId });
+                entity.HasOne(x => x.TaskItem).WithMany(x => x.TaskPeriods).HasForeignKey(x => new { x.ProjectId, x.TaskId }).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(x => x.Period).WithMany(x => x.TaskPeriods).HasForeignKey(x => x.PeriodId).OnDelete(DeleteBehavior.Cascade);
+            });
 
-            modelBuilder.Entity<Timesheet>()
-                .HasOne(t => t.Project)
-                .WithMany(p => p.Timesheets)
-                .HasForeignKey(t => t.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Timesheet>()
-                .HasOne(t => t.TaskItem)
-                .WithMany(ti => ti.Timesheets)
-                .HasForeignKey(t => new { t.ProjectId, t.TaskId })
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Timesheet>()
-                .HasOne(t => t.Employee)
-                .WithMany(e => e.Timesheets)
-                .HasForeignKey(t => t.EmployeeId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Configure EmployeeSkill table with composite key
-            modelBuilder.Entity<EmployeeSkill>()
-                .ToTable("EmployeeSkill")
-                .HasKey(es => new { es.EmployeeId, es.SkillId });
-
-            modelBuilder.Entity<EmployeeSkill>()
-                .HasOne(es => es.Employee)
-                .WithMany(e => e.EmployeeSkills)
-                .HasForeignKey(es => es.EmployeeId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<EmployeeSkill>()
-                .HasOne(es => es.Skill)
-                .WithMany(s => s.EmployeeSkills)
-                .HasForeignKey(es => es.SkillId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Configure Allocation table with composite key
-            modelBuilder.Entity<Allocation>()
-                .ToTable("Allocation")
-                .HasKey(a => new { a.EmployeeId, a.ProjectId, a.TaskId });
-
-            modelBuilder.Entity<Allocation>()
-                .HasOne(a => a.Employee)
-                .WithMany(e => e.Allocations)
-                .HasForeignKey(a => a.EmployeeId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Allocation>()
-                .HasOne(a => a.Project)
-                .WithMany(p => p.Allocations)
-                .HasForeignKey(a => a.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Allocation>()
-                .HasOne(a => a.TaskItem)
-                .WithMany(t => t.Allocations)
-                .HasForeignKey(a => new { a.ProjectId, a.TaskId })
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Configure EmployeeDepartment table with composite key
-            modelBuilder.Entity<EmployeeDepartment>()
-                .ToTable("EmployeeDepartment")
-                .HasKey(ed => new { ed.EmployeeId, ed.DepartmentId });
-
-            modelBuilder.Entity<EmployeeDepartment>()
-                .HasOne(ed => ed.Employee)
-                .WithMany(e => e.EmployeeDepartments)
-                .HasForeignKey(ed => ed.EmployeeId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<EmployeeDepartment>()
-                .HasOne(ed => ed.Department)
-                .WithMany(d => d.EmployeeDepartments)
-                .HasForeignKey(ed => ed.DepartmentId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Configure ProjectManager table with composite key
-            modelBuilder.Entity<ProjectManager>()
-                .ToTable("ProjectManager")
-                .HasKey(pm => new { pm.EmployeeId, pm.ProjectId });
-
-            modelBuilder.Entity<ProjectManager>()
-                .HasOne(pm => pm.Employee)
-                .WithMany(e => e.ProjectManagers)
-                .HasForeignKey(pm => pm.EmployeeId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<ProjectManager>()
-                .HasOne(pm => pm.Project)
-                .WithMany(p => p.ProjectManagers)
-                .HasForeignKey(pm => pm.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Configure TaskPeriod table with composite key
-            modelBuilder.Entity<TaskPeriod>()
-                .ToTable("TaskPeriod")
-                .HasKey(tp => new { tp.ProjectId, tp.TaskId, tp.PeriodId });
-
-            modelBuilder.Entity<TaskPeriod>()
-                .HasOne(tp => tp.Project)
-                .WithMany(p => p.TaskPeriods)
-                .HasForeignKey(tp => tp.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<TaskPeriod>()
-                .HasOne(tp => tp.TaskItem)
-                .WithMany(t => t.TaskPeriods)
-                .HasForeignKey(tp => new { tp.ProjectId, tp.TaskId })
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<TaskPeriod>()
-                .HasOne(tp => tp.Period)
-                .WithMany(p => p.TaskPeriods)
-                .HasForeignKey(tp => tp.PeriodId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Configure ProjectPeriod table with composite key
-            modelBuilder.Entity<ProjectPeriod>()
-                .ToTable("ProjectPeriod")
-                .HasKey(pp => new { pp.ProjectId, pp.PeriodId });
-
-            modelBuilder.Entity<ProjectPeriod>()
-                .HasOne(pp => pp.Project)
-                .WithMany(p => p.ProjectPeriods)
-                .HasForeignKey(pp => pp.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<ProjectPeriod>()
-                .HasOne(pp => pp.Period)
-                .WithMany(p => p.ProjectPeriods)
-                .HasForeignKey(pp => pp.PeriodId)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<ProjectPeriod>(entity =>
+            {
+                entity.ToTable("ProjectPeriod");
+                entity.HasKey(x => new { x.ProjectId, x.PeriodId });
+                entity.HasOne(x => x.Project).WithMany(x => x.ProjectPeriods).HasForeignKey(x => x.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(x => x.Period).WithMany(x => x.ProjectPeriods).HasForeignKey(x => x.PeriodId).OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }

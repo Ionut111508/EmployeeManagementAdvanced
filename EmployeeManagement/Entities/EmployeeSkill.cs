@@ -4,7 +4,6 @@ namespace EmployeeManagement.Entities
     {
         public string EmployeeId { get; set; } = null!;
         public string SkillId { get; set; } = null!;
-        public int ProficiencyLevel { get; set; }
         public DateTime? AcquiredDate { get; set; }
 
         // Navigation properties

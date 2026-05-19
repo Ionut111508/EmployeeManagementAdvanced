@@ -2,9 +2,7 @@ namespace EmployeeManagement.Entities
 {
     public class TaskDescription
     {
-        public string TaskDescriptionId { get; set; } = null!;
-        public string DescriptionText { get; set; } = null!;
-        public string? Status { get; set; }
-        public DateTime CreatedDate { get; set; }
+        public string DescriptionId { get; set; } = null!;
+        public string TaskDescriptionText { get; set; } = null!;
     }
 }

@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using EmployeeManagement.Data;
-using System.Threading.Tasks;
+using EmployeeManagement.Entities;
+using EmployeeManagement.DTOs;
 
 namespace EmployeeManagement.Controllers
 {
@@ -17,10 +18,78 @@ namespace EmployeeManagement.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<ActionResult<IEnumerable<ProjectDto>>> GetAll()
         {
             var projects = await _context.Projects.ToListAsync();
-            return Ok(projects);
+            var dtos = projects.Select(p => new ProjectDto { ProjectId = p.ProjectId, ProjectName = p.ProjectName }).ToList();
+            return Ok(dtos);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ProjectDto>> GetById(string id)
+        {
+            var project = await _context.Projects.FindAsync(id);
+            if (project == null)
+                return NotFound();
+
+            return Ok(new ProjectDto { ProjectId = project.ProjectId, ProjectName = project.ProjectName });
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<ProjectDto>> Create(ProjectCreateDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.ProjectId) || string.IsNullOrWhiteSpace(dto.ProjectName))
+                return BadRequest("ProjectId and ProjectName are required");
+
+            var project = new Project
+            {
+                ProjectId = dto.ProjectId,
+                ProjectName = dto.ProjectName
+            };
+
+            _context.Projects.Add(project);
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                if (await _context.Projects.AnyAsync(p => p.ProjectId == dto.ProjectId))
+                    return BadRequest("Project with this ID already exists");
+                throw;
+            }
+
+            var resultDto = new ProjectDto { ProjectId = project.ProjectId, ProjectName = project.ProjectName };
+            return CreatedAtAction(nameof(GetById), new { id = project.ProjectId }, resultDto);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(string id, ProjectUpdateDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.ProjectName))
+                return BadRequest("ProjectName is required");
+
+            var project = await _context.Projects.FindAsync(id);
+            if (project == null)
+                return NotFound();
+
+            project.ProjectName = dto.ProjectName;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+            var project = await _context.Projects.FindAsync(id);
+            if (project == null)
+                return NotFound();
+
+            _context.Projects.Remove(project);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }

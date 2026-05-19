@@ -1,0 +1,29 @@
+namespace EmployeeManagement.DTOs
+{
+    public class TaskItemDto
+    {
+        public string ProjectId { get; set; } = null!;
+        public string TaskId { get; set; } = null!;
+        public string TaskName { get; set; } = null!;
+        public decimal? EstimatedHours { get; set; }
+        public string? DescriptionId { get; set; }
+        public ProjectDto? Project { get; set; }
+        public TaskDescriptionDto? Description { get; set; }
+    }
+
+    public class TaskItemCreateDto
+    {
+        public string ProjectId { get; set; } = null!;
+        public string TaskId { get; set; } = null!;
+        public string TaskName { get; set; } = null!;
+        public decimal? EstimatedHours { get; set; }
+        public string? DescriptionId { get; set; }
+    }
+
+    public class TaskItemUpdateDto
+    {
+        public string TaskName { get; set; } = null!;
+        public decimal? EstimatedHours { get; set; }
+        public string? DescriptionId { get; set; }
+    }
+}
