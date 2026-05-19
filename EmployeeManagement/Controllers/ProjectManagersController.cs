@@ -20,27 +20,41 @@ public class ProjectManagersController : ControllerBase
     [HttpGet("project/{projectId}")]
     public async Task<IActionResult> GetByProject(string projectId)
     {
+        if (!await _context.Projects.AnyAsync(x => x.ProjectId == projectId))
+            return NotFound("Project was not found.");
+
         var result = await _context.ProjectManagers
             .Where(x => x.ProjectId == projectId)
             .Include(x => x.Employee)
             .ToListAsync();
+
         return Ok(result);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(ProjectManagerRequest request)
     {
-        if (!await _context.Employees.AnyAsync(x => x.EmployeeId == request.EmployeeId)) return BadRequest("Invalid employee.");
-        if (!await _context.Projects.AnyAsync(x => x.ProjectId == request.ProjectId)) return BadRequest("Invalid project.");
+        if (string.IsNullOrWhiteSpace(request.EmployeeId) || string.IsNullOrWhiteSpace(request.ProjectId))
+            return BadRequest("EmployeeId and ProjectId are required.");
+
+        if (request.EndDate.HasValue && request.StartDate.HasValue && request.EndDate.Value < request.StartDate.Value)
+            return BadRequest("EndDate cannot be before StartDate.");
+
+        if (!await _context.Employees.AnyAsync(x => x.EmployeeId == request.EmployeeId))
+            return BadRequest("Selected employee does not exist.");
+
+        if (!await _context.Projects.AnyAsync(x => x.ProjectId == request.ProjectId))
+            return BadRequest("Selected project does not exist.");
 
         var exists = await _context.ProjectManagers.FindAsync(request.EmployeeId, request.ProjectId);
-        if (exists != null) return BadRequest("Duplicate project manager.");
+        if (exists != null)
+            return BadRequest("Employee is already manager for this project.");
 
         var item = new ProjectManager
         {
             EmployeeId = request.EmployeeId,
             ProjectId = request.ProjectId,
-            StartDate = request.StartDate,
+            StartDate = request.StartDate ?? DateTime.Today,
             EndDate = request.EndDate
         };
 
@@ -53,7 +67,8 @@ public class ProjectManagersController : ControllerBase
     public async Task<IActionResult> Delete(string employeeId, string projectId)
     {
         var item = await _context.ProjectManagers.FindAsync(employeeId, projectId);
-        if (item == null) return NotFound();
+        if (item == null) return NotFound("Project manager assignment was not found.");
+
         _context.ProjectManagers.Remove(item);
         await _context.SaveChangesAsync();
         return NoContent();

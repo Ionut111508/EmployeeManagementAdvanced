@@ -30,7 +30,7 @@ namespace EmployeeManagement.Controllers
         {
             var account = await _context.Accounts.FindAsync(id);
             if (account == null)
-                return NotFound();
+                return NotFound("Account was not found.");
 
             return Ok(new AccountDto { AccountId = account.AccountId, Username = account.Username });
         }
@@ -39,7 +39,15 @@ namespace EmployeeManagement.Controllers
         public async Task<ActionResult<AccountDto>> Create(AccountCreateDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.AccountId) || string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password))
-                return BadRequest("AccountId, Username, and Password are required");
+                return BadRequest("AccountId, Username and Password are required.");
+
+            var accountIdExists = await _context.Accounts.AnyAsync(a => a.AccountId == dto.AccountId);
+            if (accountIdExists)
+                return BadRequest("Account with this ID already exists.");
+
+            var usernameExists = await _context.Accounts.AnyAsync(a => a.Username == dto.Username);
+            if (usernameExists)
+                return BadRequest("Username is already used.");
 
             var account = new Account
             {
@@ -49,16 +57,7 @@ namespace EmployeeManagement.Controllers
             };
 
             _context.Accounts.Add(account);
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                if (await _context.Accounts.AnyAsync(a => a.AccountId == dto.AccountId))
-                    return BadRequest("Account with this ID already exists");
-                throw;
-            }
+            await _context.SaveChangesAsync();
 
             var resultDto = new AccountDto { AccountId = account.AccountId, Username = account.Username };
             return CreatedAtAction(nameof(GetById), new { id = account.AccountId }, resultDto);
@@ -68,18 +67,21 @@ namespace EmployeeManagement.Controllers
         public async Task<IActionResult> Update(string id, AccountUpdateDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Username))
-                return BadRequest("Username is required");
+                return BadRequest("Username is required.");
 
             var account = await _context.Accounts.FindAsync(id);
             if (account == null)
-                return NotFound();
+                return NotFound("Account was not found.");
+
+            var usernameExists = await _context.Accounts.AnyAsync(a => a.Username == dto.Username && a.AccountId != id);
+            if (usernameExists)
+                return BadRequest("Username is already used by another account.");
 
             account.Username = dto.Username;
             if (!string.IsNullOrWhiteSpace(dto.Password))
                 account.Password = dto.Password;
 
             await _context.SaveChangesAsync();
-
             return NoContent();
         }
 
@@ -88,11 +90,14 @@ namespace EmployeeManagement.Controllers
         {
             var account = await _context.Accounts.FindAsync(id);
             if (account == null)
-                return NotFound();
+                return NotFound("Account was not found.");
+
+            var isUsedByEmployee = await _context.Employees.AnyAsync(e => e.AccountId == id);
+            if (isUsedByEmployee)
+                return BadRequest("Account cannot be deleted because it is assigned to an employee.");
 
             _context.Accounts.Remove(account);
             await _context.SaveChangesAsync();
-
             return NoContent();
         }
     }
