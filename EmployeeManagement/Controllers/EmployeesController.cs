@@ -71,30 +71,30 @@ namespace EmployeeManagement.Controllers
         [HttpPost]
         public async Task<ActionResult<EmployeeDto>> Create(EmployeeCreateDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.EmployeeId) || string.IsNullOrWhiteSpace(dto.LastName) || string.IsNullOrWhiteSpace(dto.FirstName))
-                return BadRequest("EmployeeId, LastName and FirstName are required.");
+            if (string.IsNullOrWhiteSpace(dto.EmployeeId) ||
+                string.IsNullOrWhiteSpace(dto.LastName) ||
+                string.IsNullOrWhiteSpace(dto.FirstName) ||
+                string.IsNullOrWhiteSpace(dto.Email) ||
+                string.IsNullOrWhiteSpace(dto.PhoneNumber) ||
+                string.IsNullOrWhiteSpace(dto.AccountId) ||
+                string.IsNullOrWhiteSpace(dto.WorkNormId))
+                return BadRequest("EmployeeId, LastName, FirstName, Email, PhoneNumber, AccountId and WorkNormId are required.");
 
             var employeeExists = await _context.Employees.AnyAsync(e => e.EmployeeId == dto.EmployeeId);
             if (employeeExists)
                 return BadRequest("Employee with this ID already exists.");
 
-            if (!string.IsNullOrWhiteSpace(dto.AccountId))
-            {
-                var accountExists = await _context.Accounts.AnyAsync(a => a.AccountId == dto.AccountId);
-                if (!accountExists)
-                    return BadRequest("Selected account does not exist.");
+            var accountExists = await _context.Accounts.AnyAsync(a => a.AccountId == dto.AccountId);
+            if (!accountExists)
+                return BadRequest("Selected account does not exist.");
 
-                var accountUsed = await _context.Employees.AnyAsync(e => e.AccountId == dto.AccountId);
-                if (accountUsed)
-                    return BadRequest("Selected account is already assigned to another employee.");
-            }
+            var accountUsed = await _context.Employees.AnyAsync(e => e.AccountId == dto.AccountId);
+            if (accountUsed)
+                return BadRequest("Selected account is already assigned to another employee.");
 
-            if (!string.IsNullOrWhiteSpace(dto.WorkNormId))
-            {
-                var workNormExists = await _context.WorkNorms.AnyAsync(w => w.WorkNormId == dto.WorkNormId);
-                if (!workNormExists)
-                    return BadRequest("Selected work norm does not exist.");
-            }
+            var workNormExists = await _context.WorkNorms.AnyAsync(w => w.WorkNormId == dto.WorkNormId);
+            if (!workNormExists)
+                return BadRequest("Selected work norm does not exist.");
 
             var employee = new Employee
             {
@@ -132,30 +132,29 @@ namespace EmployeeManagement.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, EmployeeUpdateDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.LastName) || string.IsNullOrWhiteSpace(dto.FirstName))
-                return BadRequest("LastName and FirstName are required.");
+            if (string.IsNullOrWhiteSpace(dto.LastName) ||
+                string.IsNullOrWhiteSpace(dto.FirstName) ||
+                string.IsNullOrWhiteSpace(dto.Email) ||
+                string.IsNullOrWhiteSpace(dto.PhoneNumber) ||
+                string.IsNullOrWhiteSpace(dto.AccountId) ||
+                string.IsNullOrWhiteSpace(dto.WorkNormId))
+                return BadRequest("LastName, FirstName, Email, PhoneNumber, AccountId and WorkNormId are required.");
 
             var employee = await _context.Employees.FindAsync(id);
             if (employee == null)
                 return NotFound("Employee was not found.");
 
-            if (!string.IsNullOrWhiteSpace(dto.AccountId))
-            {
-                var accountExists = await _context.Accounts.AnyAsync(a => a.AccountId == dto.AccountId);
-                if (!accountExists)
-                    return BadRequest("Selected account does not exist.");
+            var accountExists = await _context.Accounts.AnyAsync(a => a.AccountId == dto.AccountId);
+            if (!accountExists)
+                return BadRequest("Selected account does not exist.");
 
-                var accountUsed = await _context.Employees.AnyAsync(e => e.AccountId == dto.AccountId && e.EmployeeId != id);
-                if (accountUsed)
-                    return BadRequest("Selected account is already assigned to another employee.");
-            }
+            var accountUsed = await _context.Employees.AnyAsync(e => e.AccountId == dto.AccountId && e.EmployeeId != id);
+            if (accountUsed)
+                return BadRequest("Selected account is already assigned to another employee.");
 
-            if (!string.IsNullOrWhiteSpace(dto.WorkNormId))
-            {
-                var workNormExists = await _context.WorkNorms.AnyAsync(w => w.WorkNormId == dto.WorkNormId);
-                if (!workNormExists)
-                    return BadRequest("Selected work norm does not exist.");
-            }
+            var workNormExists = await _context.WorkNorms.AnyAsync(w => w.WorkNormId == dto.WorkNormId);
+            if (!workNormExists)
+                return BadRequest("Selected work norm does not exist.");
 
             employee.LastName = dto.LastName;
             employee.FirstName = dto.FirstName;

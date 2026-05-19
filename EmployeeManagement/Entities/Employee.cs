@@ -5,12 +5,11 @@ namespace EmployeeManagement.Entities
         public string EmployeeId { get; set; } = null!;
         public string LastName { get; set; } = null!;
         public string FirstName { get; set; } = null!;
-        public string? Email { get; set; }
-        public string? PhoneNumber { get; set; }
-        public string? AccountId { get; set; }
-        public string? WorkNormId { get; set; }
+        public string Email { get; set; } = null!;
+        public string PhoneNumber { get; set; } = null!;
+        public string AccountId { get; set; } = null!;
+        public string WorkNormId { get; set; } = null!;
 
-        // Navigation properties
         public Account? Account { get; set; }
         public WorkNorm? WorkNorm { get; set; }
         public ICollection<EmployeeSkill> EmployeeSkills { get; set; } = new List<EmployeeSkill>();

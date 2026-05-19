@@ -90,6 +90,8 @@ namespace EmployeeManagement.Data
                 entity.Property(x => x.FirstName).HasMaxLength(50).IsRequired();
                 entity.Property(x => x.Email).HasMaxLength(100).IsRequired();
                 entity.Property(x => x.PhoneNumber).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.AccountId).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.WorkNormId).HasMaxLength(50).IsRequired();
                 entity.HasOne(x => x.Account).WithMany().HasForeignKey(x => x.AccountId).OnDelete(DeleteBehavior.Restrict);
                 entity.HasOne(x => x.WorkNorm).WithMany().HasForeignKey(x => x.WorkNormId).OnDelete(DeleteBehavior.Restrict);
             });
@@ -114,6 +116,7 @@ namespace EmployeeManagement.Data
                 entity.HasKey(x => x.TaskCommentId);
                 entity.Property(x => x.TaskCommentId).HasMaxLength(50);
                 entity.Property(x => x.CommentText).HasMaxLength(500).IsRequired();
+                entity.Property(x => x.CommentDate).HasColumnType("date");
                 entity.HasOne(x => x.TaskItem).WithMany(x => x.TaskComments).HasForeignKey(x => new { x.ProjectId, x.TaskId }).OnDelete(DeleteBehavior.Cascade);
                 entity.HasOne(x => x.Employee).WithMany(x => x.TaskComments).HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Restrict);
             });
@@ -127,6 +130,7 @@ namespace EmployeeManagement.Data
                 entity.Property(x => x.Month).HasMaxLength(10);
                 entity.Property(x => x.Day).HasMaxLength(10);
                 entity.Property(x => x.PeriodType).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.EmployeeId).HasMaxLength(50).IsRequired();
                 entity.HasOne(x => x.Employee).WithMany(x => x.Periods).HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
             });
 
@@ -134,7 +138,7 @@ namespace EmployeeManagement.Data
             {
                 entity.ToTable("Timesheet");
                 entity.HasKey(x => new { x.ProjectId, x.TaskId, x.EmployeeId, x.WorkDate });
-                entity.Property(x => x.WorkDate).HasColumnName("EntryDate");
+                entity.Property(x => x.WorkDate).HasColumnName("EntryDate").HasColumnType("date");
                 entity.Property(x => x.WorkedHours).HasColumnName("HoursWorked").HasColumnType("decimal(4,2)");
                 entity.HasOne(x => x.TaskItem).WithMany(x => x.Timesheets).HasForeignKey(x => new { x.ProjectId, x.TaskId }).OnDelete(DeleteBehavior.Cascade);
                 entity.HasOne(x => x.Employee).WithMany(x => x.Timesheets).HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
@@ -144,6 +148,7 @@ namespace EmployeeManagement.Data
             {
                 entity.ToTable("EmployeeSkill");
                 entity.HasKey(x => new { x.EmployeeId, x.SkillId });
+                entity.Property(x => x.AcquiredDate).HasColumnType("date");
                 entity.HasOne(x => x.Employee).WithMany(x => x.EmployeeSkills).HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
                 entity.HasOne(x => x.Skill).WithMany(x => x.EmployeeSkills).HasForeignKey(x => x.SkillId).OnDelete(DeleteBehavior.Cascade);
             });
@@ -152,8 +157,8 @@ namespace EmployeeManagement.Data
             {
                 entity.ToTable("Allocation");
                 entity.HasKey(x => new { x.EmployeeId, x.ProjectId, x.TaskId });
-                entity.Property(x => x.AllocationStartDate).HasColumnName("StartDate");
-                entity.Property(x => x.AllocationEndDate).HasColumnName("EndDate");
+                entity.Property(x => x.AllocationStartDate).HasColumnType("date").IsRequired();
+                entity.Property(x => x.AllocationEndDate).HasColumnType("date");
                 entity.Property(x => x.AllocatedHours).HasColumnName("HoursPerDay").HasColumnType("decimal(2,1)");
                 entity.HasOne(x => x.Employee).WithMany(x => x.Allocations).HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
                 entity.HasOne(x => x.TaskItem).WithMany(x => x.Allocations).HasForeignKey(x => new { x.ProjectId, x.TaskId }).OnDelete(DeleteBehavior.Cascade);
@@ -163,6 +168,8 @@ namespace EmployeeManagement.Data
             {
                 entity.ToTable("EmployeeDepartment");
                 entity.HasKey(x => new { x.EmployeeId, x.DepartmentId });
+                entity.Property(x => x.StartDate).HasColumnType("date").IsRequired();
+                entity.Property(x => x.EndDate).HasColumnType("date");
                 entity.HasOne(x => x.Employee).WithMany(x => x.EmployeeDepartments).HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
                 entity.HasOne(x => x.Department).WithMany(x => x.EmployeeDepartments).HasForeignKey(x => x.DepartmentId).OnDelete(DeleteBehavior.Cascade);
             });
@@ -171,6 +178,8 @@ namespace EmployeeManagement.Data
             {
                 entity.ToTable("ProjectManager");
                 entity.HasKey(x => new { x.EmployeeId, x.ProjectId });
+                entity.Property(x => x.StartDate).HasColumnType("date");
+                entity.Property(x => x.EndDate).HasColumnType("date");
                 entity.HasOne(x => x.Employee).WithMany(x => x.ProjectManagers).HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
                 entity.HasOne(x => x.Project).WithMany(x => x.ProjectManagers).HasForeignKey(x => x.ProjectId).OnDelete(DeleteBehavior.Cascade);
             });
