@@ -17,6 +17,16 @@ public class EmployeeDepartmentsController : ControllerBase
         _context = context;
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await _context.EmployeeDepartments
+            .Include(x => x.Employee)
+            .Include(x => x.Department)
+            .ToListAsync();
+        return Ok(result);
+    }
+
     [HttpGet("employee/{employeeId}")]
     public async Task<IActionResult> GetByEmployee(string employeeId)
     {
@@ -25,6 +35,21 @@ public class EmployeeDepartmentsController : ControllerBase
 
         var result = await _context.EmployeeDepartments
             .Where(x => x.EmployeeId == employeeId)
+            .Include(x => x.Department)
+            .ToListAsync();
+
+        return Ok(result);
+    }
+
+    [HttpGet("department/{departmentId}")]
+    public async Task<IActionResult> GetByDepartment(string departmentId)
+    {
+        if (!await _context.Departments.AnyAsync(x => x.DepartmentId == departmentId))
+            return NotFound("Department was not found.");
+
+        var result = await _context.EmployeeDepartments
+            .Where(x => x.DepartmentId == departmentId)
+            .Include(x => x.Employee)
             .Include(x => x.Department)
             .ToListAsync();
 
