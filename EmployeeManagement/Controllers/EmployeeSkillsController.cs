@@ -17,6 +17,16 @@ public class EmployeeSkillsController : ControllerBase
         _context = context;
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await _context.EmployeeSkills
+            .Include(x => x.Employee)
+            .Include(x => x.Skill)
+            .ToListAsync();
+        return Ok(result);
+    }
+
     [HttpGet("employee/{employeeId}")]
     public async Task<IActionResult> GetByEmployee(string employeeId)
     {
@@ -25,6 +35,21 @@ public class EmployeeSkillsController : ControllerBase
 
         var result = await _context.EmployeeSkills
             .Where(x => x.EmployeeId == employeeId)
+            .Include(x => x.Skill)
+            .ToListAsync();
+
+        return Ok(result);
+    }
+
+    [HttpGet("skill/{skillId}")]
+    public async Task<IActionResult> GetBySkill(string skillId)
+    {
+        if (!await _context.Skills.AnyAsync(x => x.SkillId == skillId))
+            return NotFound("Skill was not found.");
+
+        var result = await _context.EmployeeSkills
+            .Where(x => x.SkillId == skillId)
+            .Include(x => x.Employee)
             .Include(x => x.Skill)
             .ToListAsync();
 
