@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace EmployeeManagement.Entities
 {
     public class Allocation
@@ -5,8 +7,14 @@ namespace EmployeeManagement.Entities
         public string EmployeeId { get; set; } = null!;
         public string ProjectId { get; set; } = null!;
         public string TaskId { get; set; } = null!;
+
+        [Column("AllocationStartDate")]
         public DateTime AllocationStartDate { get; set; }
+
+        [Column("AllocationEndDate")]
         public DateTime? AllocationEndDate { get; set; }
+
+        [Column("HoursPerDay")]
         public decimal AllocatedHours { get; set; }
 
         public Employee? Employee { get; set; }
