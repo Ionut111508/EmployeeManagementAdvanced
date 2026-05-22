@@ -4,6 +4,7 @@ namespace EmployeeManagement.DTOs
     {
         public string AccountId { get; set; } = null!;
         public string Username { get; set; } = null!;
+        public string Role { get; set; } = "Employee";
     }
 
     public class AccountCreateDto
@@ -11,11 +12,13 @@ namespace EmployeeManagement.DTOs
         public string AccountId { get; set; } = null!;
         public string Username { get; set; } = null!;
         public string Password { get; set; } = null!;
+        public string Role { get; set; } = "Employee";
     }
 
     public class AccountUpdateDto
     {
         public string Username { get; set; } = null!;
         public string? Password { get; set; }
+        public string Role { get; set; } = "Employee";
     }
 }
