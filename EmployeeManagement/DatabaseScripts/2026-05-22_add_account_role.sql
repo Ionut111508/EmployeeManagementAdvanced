@@ -1,0 +1,5 @@
+IF COL_LENGTH('Account', 'Role') IS NULL
+BEGIN
+    ALTER TABLE [Account] ADD [Role] NVARCHAR(30) NOT NULL CONSTRAINT DF_Account_Role DEFAULT 'Employee';
+END;
+GO
