@@ -24,7 +24,8 @@ public class LoginController : ControllerBase
 
         var employee = await _context.Employees.FirstOrDefaultAsync(e => e.AccountId == account.AccountId);
         var isManager = employee != null && await _context.ProjectManagers.AnyAsync(pm => pm.EmployeeId == employee.EmployeeId);
-        var role = account.Username.Contains("admin", StringComparison.OrdinalIgnoreCase) || account.AccountId.Equals("ACC001", StringComparison.OrdinalIgnoreCase) ? "Admin" : isManager ? "Manager" : "Employee";
+        var fallbackRole = account.Username.Contains("admin", StringComparison.OrdinalIgnoreCase) || account.AccountId.Equals("ACC001", StringComparison.OrdinalIgnoreCase) ? "Admin" : isManager ? "Manager" : "Employee";
+        var role = await ReadAccountRoleAsync(account.AccountId, fallbackRole);
         var expiresAt = DateTime.UtcNow.AddHours(8);
 
         return Ok(new LoginResponse
@@ -36,5 +37,26 @@ public class LoginController : ControllerBase
             EmployeeId = employee?.EmployeeId,
             ExpiresAt = expiresAt
         });
+    }
+
+    private async Task<string> ReadAccountRoleAsync(string accountId, string fallbackRole)
+    {
+        try
+        {
+            var connection = _context.Database.GetDbConnection();
+            await using var command = connection.CreateCommand();
+            command.CommandText = "SELECT Role FROM Account WHERE AccountId = @accountId";
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = "@accountId";
+            parameter.Value = accountId;
+            command.Parameters.Add(parameter);
+            if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
+            var value = await command.ExecuteScalarAsync();
+            return value == null || value == DBNull.Value || string.IsNullOrWhiteSpace(value.ToString()) ? fallbackRole : value.ToString()!;
+        }
+        catch
+        {
+            return fallbackRole;
+        }
     }
 }
