@@ -34,6 +34,10 @@ public class AllocationsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create(CreateAllocationRequest request)
     {
+        var endDate = request.AllocationEndDate ?? request.AllocationStartDate;
+        if (await IsEmployeeOnLeaveAsync(request.EmployeeId, request.AllocationStartDate, endDate))
+            return BadRequest("Employee is on leave in this period. Select another employee or delay the task.");
+
         var result = await _service.CreateAllocationAsync(request);
         return result.Success ? Ok(result.Allocation) : BadRequest(result.Error);
     }
@@ -60,6 +64,8 @@ public class AllocationsController : ControllerBase
         foreach (var employee in employees)
         {
             if (employee.WorkNorm == null) continue;
+            if (await IsEmployeeOnLeaveAsync(employee.EmployeeId, request.StartDate, endDate)) continue;
+
             var valid = true;
             decimal load = 0;
 
@@ -82,7 +88,7 @@ public class AllocationsController : ControllerBase
             }
         }
 
-        if (selectedEmployeeId == null) return BadRequest("No available employee found for this interval.");
+        if (selectedEmployeeId == null) return BadRequest("No available employee found for this interval. The task should be delayed or assigned manually to a replacement.");
 
         var result = await _service.CreateAllocationAsync(new CreateAllocationRequest
         {
@@ -105,5 +111,34 @@ public class AllocationsController : ControllerBase
         _context.Allocations.Remove(allocation);
         await _context.SaveChangesAsync();
         return NoContent();
+    }
+
+    private async Task<bool> IsEmployeeOnLeaveAsync(string employeeId, DateTime startDate, DateTime endDate)
+    {
+        try
+        {
+            var connection = _context.Database.GetDbConnection();
+            await using var command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(1) FROM EmployeeLeave WHERE EmployeeId = @employeeId AND StartDate <= @endDate AND EndDate >= @startDate";
+            var employeeParameter = command.CreateParameter();
+            employeeParameter.ParameterName = "@employeeId";
+            employeeParameter.Value = employeeId;
+            command.Parameters.Add(employeeParameter);
+            var startParameter = command.CreateParameter();
+            startParameter.ParameterName = "@startDate";
+            startParameter.Value = startDate.Date;
+            command.Parameters.Add(startParameter);
+            var endParameter = command.CreateParameter();
+            endParameter.ParameterName = "@endDate";
+            endParameter.Value = endDate.Date;
+            command.Parameters.Add(endParameter);
+            if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
+            var value = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(value) > 0;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }
