@@ -21,8 +21,29 @@ public class EmployeeDepartmentsController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var result = await _context.EmployeeDepartments
-            .Include(x => x.Employee)
-            .Include(x => x.Department)
+            .AsNoTracking()
+            .Select(x => new
+            {
+                x.EmployeeId,
+                x.DepartmentId,
+                x.StartDate,
+                x.EndDate,
+                employee = new
+                {
+                    x.Employee.EmployeeId,
+                    x.Employee.FirstName,
+                    x.Employee.LastName,
+                    x.Employee.Email,
+                    x.Employee.PhoneNumber,
+                    x.Employee.AccountId,
+                    x.Employee.WorkNormId
+                },
+                department = new
+                {
+                    x.Department.DepartmentId,
+                    x.Department.DepartmentName
+                }
+            })
             .ToListAsync();
         return Ok(result);
     }
@@ -34,8 +55,20 @@ public class EmployeeDepartmentsController : ControllerBase
             return NotFound("Employee was not found.");
 
         var result = await _context.EmployeeDepartments
+            .AsNoTracking()
             .Where(x => x.EmployeeId == employeeId)
-            .Include(x => x.Department)
+            .Select(x => new
+            {
+                x.EmployeeId,
+                x.DepartmentId,
+                x.StartDate,
+                x.EndDate,
+                department = new
+                {
+                    x.Department.DepartmentId,
+                    x.Department.DepartmentName
+                }
+            })
             .ToListAsync();
 
         return Ok(result);
@@ -48,9 +81,30 @@ public class EmployeeDepartmentsController : ControllerBase
             return NotFound("Department was not found.");
 
         var result = await _context.EmployeeDepartments
+            .AsNoTracking()
             .Where(x => x.DepartmentId == departmentId)
-            .Include(x => x.Employee)
-            .Include(x => x.Department)
+            .Select(x => new
+            {
+                x.EmployeeId,
+                x.DepartmentId,
+                x.StartDate,
+                x.EndDate,
+                employee = new
+                {
+                    x.Employee.EmployeeId,
+                    x.Employee.FirstName,
+                    x.Employee.LastName,
+                    x.Employee.Email,
+                    x.Employee.PhoneNumber,
+                    x.Employee.AccountId,
+                    x.Employee.WorkNormId
+                },
+                department = new
+                {
+                    x.Department.DepartmentId,
+                    x.Department.DepartmentName
+                }
+            })
             .ToListAsync();
 
         return Ok(result);
@@ -88,7 +142,7 @@ public class EmployeeDepartmentsController : ControllerBase
 
         _context.EmployeeDepartments.Add(item);
         await _context.SaveChangesAsync();
-        return Ok(item);
+        return Ok(new { item.EmployeeId, item.DepartmentId, item.StartDate, item.EndDate });
     }
 
     [HttpDelete("{employeeId}/{departmentId}")]
