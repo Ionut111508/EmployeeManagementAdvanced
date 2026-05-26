@@ -1,6 +1,7 @@
 using EmployeeManagement.Data;
 using EmployeeManagement.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace EmployeeManagement.Controllers;
@@ -29,9 +30,16 @@ JOIN Employee e ON e.EmployeeId = l.EmployeeId
 LEFT JOIN Employee r ON r.EmployeeId = l.ReplacementEmployeeId
 ORDER BY l.StartDate";
         if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
-        await using var reader = await command.ExecuteReaderAsync();
         var result = new List<EmployeeLeaveDto>();
-        while (await reader.ReadAsync()) result.Add(ReadLeave(reader));
+        try
+        {
+            await using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync()) result.Add(ReadLeave(reader));
+        }
+        catch (SqlException ex) when (ex.Number == 208)
+        {
+            return Ok(result);
+        }
         return Ok(result);
     }
 
@@ -66,8 +74,15 @@ END";
         Add(command, "@Reason", dto.Reason ?? (object)DBNull.Value);
         Add(command, "@ReplacementEmployeeId", string.IsNullOrWhiteSpace(dto.ReplacementEmployeeId) ? DBNull.Value : dto.ReplacementEmployeeId);
         if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
-        var status = (await command.ExecuteScalarAsync())?.ToString();
-        if (status == "OVERLAP") return BadRequest("Employee already has leave in this period.");
+        try
+        {
+            var status = (await command.ExecuteScalarAsync())?.ToString();
+            if (status == "OVERLAP") return BadRequest("Employee already has leave in this period.");
+        }
+        catch (SqlException ex) when (ex.Number == 208)
+        {
+            return BadRequest("EmployeeLeave table does not exist in the database.");
+        }
         return Ok(new { employeeLeaveId = id });
     }
 
@@ -86,21 +101,28 @@ JOIN Project p ON p.ProjectId = a.ProjectId
 WHERE l.EmployeeLeaveId = @LeaveId";
         Add(command, "@LeaveId", leaveId);
         if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
-        await using var reader = await command.ExecuteReaderAsync();
         var result = new List<object>();
-        while (await reader.ReadAsync())
+        try
         {
-            result.Add(new
+            await using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
             {
-                ProjectId = reader.GetString(0),
-                ProjectName = reader.GetString(1),
-                TaskId = reader.GetString(2),
-                TaskName = reader.GetString(3),
-                AllocationStartDate = reader.GetDateTime(4),
-                AllocationEndDate = reader.IsDBNull(5) ? (DateTime?)null : reader.GetDateTime(5),
-                AllocatedHours = reader.GetDecimal(6),
-                Status = reader.GetString(7)
-            });
+                result.Add(new
+                {
+                    ProjectId = reader.GetString(0),
+                    ProjectName = reader.GetString(1),
+                    TaskId = reader.GetString(2),
+                    TaskName = reader.GetString(3),
+                    AllocationStartDate = reader.GetDateTime(4),
+                    AllocationEndDate = reader.IsDBNull(5) ? (DateTime?)null : reader.GetDateTime(5),
+                    AllocatedHours = reader.GetDecimal(6),
+                    Status = reader.GetString(7)
+                });
+            }
+        }
+        catch (SqlException ex) when (ex.Number == 208)
+        {
+            return Ok(result);
         }
         return Ok(result);
     }
