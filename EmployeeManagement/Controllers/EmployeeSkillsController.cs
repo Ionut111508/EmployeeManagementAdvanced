@@ -22,8 +22,28 @@ public class EmployeeSkillsController : ControllerBase
     {
         var result = await _context.EmployeeSkills
             .AsNoTracking()
-            .Include(x => x.Employee)
-            .Include(x => x.Skill)
+            .Select(x => new
+            {
+                x.EmployeeId,
+                x.SkillId,
+                x.AcquiredDate,
+                employee = new
+                {
+                    x.Employee.EmployeeId,
+                    x.Employee.FirstName,
+                    x.Employee.LastName,
+                    x.Employee.Email,
+                    x.Employee.PhoneNumber,
+                    x.Employee.AccountId,
+                    x.Employee.WorkNormId
+                },
+                skill = new
+                {
+                    x.Skill.SkillId,
+                    x.Skill.SkillName,
+                    x.Skill.SkillLevel
+                }
+            })
             .ToListAsync();
         return Ok(result);
     }
@@ -37,7 +57,18 @@ public class EmployeeSkillsController : ControllerBase
         var result = await _context.EmployeeSkills
             .AsNoTracking()
             .Where(x => x.EmployeeId == employeeId)
-            .Include(x => x.Skill)
+            .Select(x => new
+            {
+                x.EmployeeId,
+                x.SkillId,
+                x.AcquiredDate,
+                skill = new
+                {
+                    x.Skill.SkillId,
+                    x.Skill.SkillName,
+                    x.Skill.SkillLevel
+                }
+            })
             .ToListAsync();
 
         return Ok(result);
@@ -52,8 +83,28 @@ public class EmployeeSkillsController : ControllerBase
         var result = await _context.EmployeeSkills
             .AsNoTracking()
             .Where(x => x.SkillId == skillId)
-            .Include(x => x.Employee)
-            .Include(x => x.Skill)
+            .Select(x => new
+            {
+                x.EmployeeId,
+                x.SkillId,
+                x.AcquiredDate,
+                employee = new
+                {
+                    x.Employee.EmployeeId,
+                    x.Employee.FirstName,
+                    x.Employee.LastName,
+                    x.Employee.Email,
+                    x.Employee.PhoneNumber,
+                    x.Employee.AccountId,
+                    x.Employee.WorkNormId
+                },
+                skill = new
+                {
+                    x.Skill.SkillId,
+                    x.Skill.SkillName,
+                    x.Skill.SkillLevel
+                }
+            })
             .ToListAsync();
 
         return Ok(result);
@@ -84,7 +135,7 @@ public class EmployeeSkillsController : ControllerBase
 
         _context.EmployeeSkills.Add(item);
         await _context.SaveChangesAsync();
-        return Ok(item);
+        return Ok(new { item.EmployeeId, item.SkillId, item.AcquiredDate });
     }
 
     [HttpDelete("{employeeId}/{skillId}")]
