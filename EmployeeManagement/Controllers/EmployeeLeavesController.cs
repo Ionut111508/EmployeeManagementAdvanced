@@ -97,7 +97,7 @@ WHERE l.EmployeeLeaveId = @LeaveId";
                 TaskId = reader.GetString(2),
                 TaskName = reader.GetString(3),
                 AllocationStartDate = reader.GetDateTime(4),
-                AllocationEndDate = reader.IsDBNull(5) ? null : reader.GetDateTime(5),
+                AllocationEndDate = reader.IsDBNull(5) ? (DateTime?)null : reader.GetDateTime(5),
                 AllocatedHours = reader.GetDecimal(6),
                 Status = reader.GetString(7)
             });
