@@ -99,7 +99,7 @@ END";
         var connection = _context.Database.GetDbConnection();
         await using var command = connection.CreateCommand();
         command.CommandText = @"
-SELECT a.ProjectId, p.ProjectName, a.TaskId, t.TaskName, a.AllocationStartDate, a.AllocationEndDate, a.HoursPerDay,
+SELECT a.ProjectId, p.ProjectName, a.TaskId, t.TaskName, a.AllocationStartDate, a.AllocationEndDate, a.AllocatedHours,
        CASE WHEN l.ReplacementEmployeeId IS NULL THEN 'Needs replacement or delay' ELSE 'Replacement selected' END AS Status
 FROM EmployeeLeave l
 JOIN Allocation a ON a.EmployeeId = l.EmployeeId AND a.AllocationStartDate <= l.EndDate AND ISNULL(a.AllocationEndDate, a.AllocationStartDate) >= l.StartDate

@@ -22,27 +22,27 @@ public class EmployeeSkillsController : ControllerBase
     {
         var result = await _context.EmployeeSkills
             .AsNoTracking()
-            .Select(x => new
+            .Select(x => new EmployeeSkillResponse
             {
-                x.EmployeeId,
-                x.SkillId,
-                x.AcquiredDate,
-                employee = new
+                EmployeeId = x.EmployeeId,
+                SkillId = x.SkillId,
+                AcquiredDate = x.AcquiredDate,
+                Employee = x.Employee != null ? new EmployeeBasicDto
                 {
-                    x.Employee.EmployeeId,
-                    x.Employee.FirstName,
-                    x.Employee.LastName,
-                    x.Employee.Email,
-                    x.Employee.PhoneNumber,
-                    x.Employee.AccountId,
-                    x.Employee.WorkNormId
-                },
-                skill = new
+                    EmployeeId = x.Employee.EmployeeId,
+                    FirstName = x.Employee.FirstName,
+                    LastName = x.Employee.LastName,
+                    Email = x.Employee.Email,
+                    PhoneNumber = x.Employee.PhoneNumber,
+                    AccountId = x.Employee.AccountId,
+                    WorkNormId = x.Employee.WorkNormId
+                } : null,
+                Skill = x.Skill != null ? new SkillBasicDto
                 {
-                    x.Skill.SkillId,
-                    x.Skill.SkillName,
-                    x.Skill.SkillLevel
-                }
+                    SkillId = x.Skill.SkillId,
+                    SkillName = x.Skill.SkillName,
+                    SkillLevel = x.Skill.SkillLevel
+                } : null
             })
             .ToListAsync();
         return Ok(result);
@@ -51,23 +51,23 @@ public class EmployeeSkillsController : ControllerBase
     [HttpGet("employee/{employeeId}")]
     public async Task<IActionResult> GetByEmployee(string employeeId)
     {
-        if (!await _context.Employees.AnyAsync(x => x.EmployeeId == employeeId))
-            return NotFound("Employee was not found.");
+        if (!await _context.Employees.AsNoTracking().AnyAsync(x => x.EmployeeId == employeeId))
+            return NotFound("Employee not found.");
 
         var result = await _context.EmployeeSkills
             .AsNoTracking()
             .Where(x => x.EmployeeId == employeeId)
-            .Select(x => new
+            .Select(x => new EmployeeSkillByEmployeeResponse
             {
-                x.EmployeeId,
-                x.SkillId,
-                x.AcquiredDate,
-                skill = new
+                EmployeeId = x.EmployeeId,
+                SkillId = x.SkillId,
+                AcquiredDate = x.AcquiredDate,
+                Skill = x.Skill != null ? new SkillBasicDto
                 {
-                    x.Skill.SkillId,
-                    x.Skill.SkillName,
-                    x.Skill.SkillLevel
-                }
+                    SkillId = x.Skill.SkillId,
+                    SkillName = x.Skill.SkillName,
+                    SkillLevel = x.Skill.SkillLevel
+                } : null
             })
             .ToListAsync();
 
@@ -77,33 +77,33 @@ public class EmployeeSkillsController : ControllerBase
     [HttpGet("skill/{skillId}")]
     public async Task<IActionResult> GetBySkill(string skillId)
     {
-        if (!await _context.Skills.AnyAsync(x => x.SkillId == skillId))
-            return NotFound("Skill was not found.");
+        if (!await _context.Skills.AsNoTracking().AnyAsync(x => x.SkillId == skillId))
+            return NotFound("Skill not found.");
 
         var result = await _context.EmployeeSkills
             .AsNoTracking()
             .Where(x => x.SkillId == skillId)
-            .Select(x => new
+            .Select(x => new EmployeeSkillBySkillResponse
             {
-                x.EmployeeId,
-                x.SkillId,
-                x.AcquiredDate,
-                employee = new
+                EmployeeId = x.EmployeeId,
+                SkillId = x.SkillId,
+                AcquiredDate = x.AcquiredDate,
+                Employee = x.Employee != null ? new EmployeeBasicDto
                 {
-                    x.Employee.EmployeeId,
-                    x.Employee.FirstName,
-                    x.Employee.LastName,
-                    x.Employee.Email,
-                    x.Employee.PhoneNumber,
-                    x.Employee.AccountId,
-                    x.Employee.WorkNormId
-                },
-                skill = new
+                    EmployeeId = x.Employee.EmployeeId,
+                    FirstName = x.Employee.FirstName,
+                    LastName = x.Employee.LastName,
+                    Email = x.Employee.Email,
+                    PhoneNumber = x.Employee.PhoneNumber,
+                    AccountId = x.Employee.AccountId,
+                    WorkNormId = x.Employee.WorkNormId
+                } : null,
+                Skill = x.Skill != null ? new SkillBasicDto
                 {
-                    x.Skill.SkillId,
-                    x.Skill.SkillName,
-                    x.Skill.SkillLevel
-                }
+                    SkillId = x.Skill.SkillId,
+                    SkillName = x.Skill.SkillName,
+                    SkillLevel = x.Skill.SkillLevel
+                } : null
             })
             .ToListAsync();
 
@@ -116,14 +116,14 @@ public class EmployeeSkillsController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.EmployeeId) || string.IsNullOrWhiteSpace(request.SkillId))
             return BadRequest("EmployeeId and SkillId are required.");
 
-        if (!await _context.Employees.AnyAsync(x => x.EmployeeId == request.EmployeeId))
+        if (!await _context.Employees.AsNoTracking().AnyAsync(x => x.EmployeeId == request.EmployeeId))
             return BadRequest("Selected employee does not exist.");
 
-        if (!await _context.Skills.AnyAsync(x => x.SkillId == request.SkillId))
+        if (!await _context.Skills.AsNoTracking().AnyAsync(x => x.SkillId == request.SkillId))
             return BadRequest("Selected skill does not exist.");
 
-        var exists = await _context.EmployeeSkills.FindAsync(request.EmployeeId, request.SkillId);
-        if (exists != null)
+        var exists = await _context.EmployeeSkills.AsNoTracking().AnyAsync(x => x.EmployeeId == request.EmployeeId && x.SkillId == request.SkillId);
+        if (exists)
             return BadRequest("Employee already has this skill.");
 
         var item = new EmployeeSkill
@@ -135,14 +135,23 @@ public class EmployeeSkillsController : ControllerBase
 
         _context.EmployeeSkills.Add(item);
         await _context.SaveChangesAsync();
-        return Ok(new { item.EmployeeId, item.SkillId, item.AcquiredDate });
+
+        var response = new EmployeeSkillResponse
+        {
+            EmployeeId = item.EmployeeId,
+            SkillId = item.SkillId,
+            AcquiredDate = item.AcquiredDate
+        };
+
+        return CreatedAtAction(nameof(GetByEmployee), new { employeeId = item.EmployeeId }, response);
     }
 
     [HttpDelete("{employeeId}/{skillId}")]
     public async Task<IActionResult> Delete(string employeeId, string skillId)
     {
         var item = await _context.EmployeeSkills.FindAsync(employeeId, skillId);
-        if (item == null) return NotFound("Employee skill assignment was not found.");
+        if (item == null)
+            return NotFound("Employee skill assignment not found.");
 
         _context.EmployeeSkills.Remove(item);
         await _context.SaveChangesAsync();

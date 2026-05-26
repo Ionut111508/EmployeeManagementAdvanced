@@ -61,30 +61,23 @@ public class AllocationService : IAllocationService
         var employee = await _context.Employees.Include(e => e.WorkNorm)
             .FirstOrDefaultAsync(e => e.EmployeeId == request.EmployeeId);
         if (employee?.WorkNorm == null) return (false, "Invalid employee or work norm.", null);
-
         var task = await _context.TaskItems.Include(t => t.Project)
             .FirstOrDefaultAsync(t => t.ProjectId == request.ProjectId && t.TaskId == request.TaskId);
         if (task == null) return (false, "Invalid task.", null);
-
         var endDate = request.AllocationEndDate ?? request.AllocationStartDate;
         if (request.AllocationStartDate.Date > endDate.Date) return (false, "Invalid interval.", null);
         if (request.AllocatedHours <= 0) return (false, "Invalid hours.", null);
-
         var duplicate = await _context.Allocations.FindAsync(request.EmployeeId, request.ProjectId, request.TaskId);
         if (duplicate != null) return (false, "Duplicate allocation.", null);
-
         var newTotalHours = CalculateTotalAllocationHours(request.AllocationStartDate, endDate, request.AllocatedHours);
         var existingAllocations = await _context.Allocations
             .Where(a => a.ProjectId == request.ProjectId && a.TaskId == request.TaskId)
             .ToListAsync();
-
         var currentTotal = existingAllocations.Sum(a =>
             CalculateTotalAllocationHours(a.AllocationStartDate, a.AllocationEndDate ?? a.AllocationStartDate, a.AllocatedHours));
-
         var estimatedHours = task.EstimatedHours ?? 0;
         if (estimatedHours > 0 && currentTotal + newTotalHours > estimatedHours)
             return (false, "Task hours exceeded.", null);
-
         for (var date = request.AllocationStartDate.Date; date <= endDate.Date; date = date.AddDays(1))
         {
             if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday) continue;
@@ -92,7 +85,6 @@ public class AllocationService : IAllocationService
             if (dailyHours + request.AllocatedHours > employee.WorkNorm.WorkHours)
                 return (false, "Work norm exceeded.", null);
         }
-
         var allocation = new Allocation
         {
             EmployeeId = request.EmployeeId,
@@ -102,10 +94,8 @@ public class AllocationService : IAllocationService
             AllocationEndDate = endDate.Date,
             AllocatedHours = request.AllocatedHours
         };
-
         _context.Allocations.Add(allocation);
         await _context.SaveChangesAsync();
-
         var response = (await GetByTaskAsync(request.ProjectId, request.TaskId))
             .First(a => a.EmployeeId == request.EmployeeId);
         response.TotalAllocationHours = newTotalHours;
