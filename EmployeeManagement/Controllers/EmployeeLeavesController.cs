@@ -20,6 +20,8 @@ public class EmployeeLeavesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
+        if (!await EmployeeLeaveTableExists()) return Ok(new List<EmployeeLeaveDto>());
+
         var connection = _context.Database.GetDbConnection();
         await using var command = connection.CreateCommand();
         command.CommandText = @"
@@ -46,6 +48,9 @@ ORDER BY l.StartDate";
     [HttpPost]
     public async Task<IActionResult> Create(EmployeeLeaveCreateDto dto)
     {
+        if (!await EmployeeLeaveTableExists())
+            return BadRequest("EmployeeLeave table does not exist in the database. Run the employee leave SQL migration before creating leaves.");
+
         if (string.IsNullOrWhiteSpace(dto.EmployeeId)) return BadRequest("Employee is required.");
         if (dto.StartDate.Date > dto.EndDate.Date) return BadRequest("End date cannot be before start date.");
         if (!await _context.Employees.AnyAsync(e => e.EmployeeId == dto.EmployeeId)) return BadRequest("Employee does not exist.");
@@ -89,6 +94,8 @@ END";
     [HttpGet("{leaveId}/impact")]
     public async Task<IActionResult> GetImpact(string leaveId)
     {
+        if (!await EmployeeLeaveTableExists()) return Ok(new List<object>());
+
         var connection = _context.Database.GetDbConnection();
         await using var command = connection.CreateCommand();
         command.CommandText = @"
@@ -125,6 +132,16 @@ WHERE l.EmployeeLeaveId = @LeaveId";
             return Ok(result);
         }
         return Ok(result);
+    }
+
+    private async Task<bool> EmployeeLeaveTableExists()
+    {
+        var connection = _context.Database.GetDbConnection();
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT CASE WHEN OBJECT_ID('EmployeeLeave', 'U') IS NULL THEN 0 ELSE 1 END";
+        if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
+        var result = await command.ExecuteScalarAsync();
+        return Convert.ToInt32(result) == 1;
     }
 
     private static EmployeeLeaveDto ReadLeave(System.Data.Common.DbDataReader reader) => new()
