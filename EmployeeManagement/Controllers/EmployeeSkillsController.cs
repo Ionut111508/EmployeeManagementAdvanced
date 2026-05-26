@@ -21,6 +21,7 @@ public class EmployeeSkillsController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var result = await _context.EmployeeSkills
+            .AsNoTracking()
             .Include(x => x.Employee)
             .Include(x => x.Skill)
             .ToListAsync();
@@ -34,6 +35,7 @@ public class EmployeeSkillsController : ControllerBase
             return NotFound("Employee was not found.");
 
         var result = await _context.EmployeeSkills
+            .AsNoTracking()
             .Where(x => x.EmployeeId == employeeId)
             .Include(x => x.Skill)
             .ToListAsync();
@@ -48,6 +50,7 @@ public class EmployeeSkillsController : ControllerBase
             return NotFound("Skill was not found.");
 
         var result = await _context.EmployeeSkills
+            .AsNoTracking()
             .Where(x => x.SkillId == skillId)
             .Include(x => x.Employee)
             .Include(x => x.Skill)
